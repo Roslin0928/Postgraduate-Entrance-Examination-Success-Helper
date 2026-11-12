@@ -63,9 +63,10 @@ describe('vocabulary API', () => {
 
   it('isolates custom words and due queues by authenticated account', async () => {
     const a = await request(app.getHttpServer()).post('/v1/vocabulary/custom').set('Authorization', 'Bearer user-a').send({ word: 'apple', meaning: '苹果' }).expect(201);
-    await request(app.getHttpServer()).post('/v1/vocabulary/custom').set('Authorization', 'Bearer user-b').send({ word: 'book', meaning: '书' }).expect(201);
+    const b = await request(app.getHttpServer()).post('/v1/vocabulary/custom').set('Authorization', 'Bearer user-b').send({ word: 'book', meaning: '书' }).expect(201);
     const dueA = await request(app.getHttpServer()).get('/v1/vocabulary/due').set('Authorization', 'Bearer user-a').set('x-time-zone', 'Asia/Shanghai').expect(200);
     expect(dueA.body.items.map((item: any) => item.id)).toContain(a.body[0].id);
+    expect(dueA.body.items.map((item: any) => item.id)).not.toContain(b.body[0].id);
     expect(dueA.body.items.filter((item: any) => item.source === 'builtin_exam')).toHaveLength(5);
     expect(dueA.body.count).toBe(6);
     expect([...tasks.values()].find((task) => task.accountId === 'user-a')?.type).toBe('vocabulary');
@@ -83,6 +84,17 @@ describe('vocabulary API', () => {
     await request(app.getHttpServer()).post(`/v1/vocabulary/${otherId}/reviews`).set('Authorization', 'Bearer user-a').send({ feedback: 'known' }).expect(404);
     expect(reviews.map((review) => review.taskId)).toEqual([taskId, null]);
     expect(reviews.every((review) => review.accountId === 'user-a')).toBe(true);
+  });
+
+  it('requires authentication and rejects reviews associated with non-vocabulary tasks', async () => {
+    await request(app.getHttpServer()).get('/v1/vocabulary/due').expect(401);
+    await request(app.getHttpServer()).post('/v1/vocabulary/custom').send({ word: 'apple', meaning: '苹果' }).expect(401);
+    const word = await request(app.getHttpServer()).post('/v1/vocabulary/custom').set('Authorization', 'Bearer user-a')
+      .send({ word: 'apple', meaning: '苹果' }).expect(201);
+    tasks.set('task-custom', { id: 'task-custom', accountId: 'user-a', type: 'custom' });
+    await request(app.getHttpServer()).post(`/v1/vocabulary/${word.body[0].id}/reviews`)
+      .set('Authorization', 'Bearer user-a').send({ feedback: 'known', taskId: 'task-custom' }).expect(404);
+    expect(reviews).toHaveLength(0);
   });
 
   it('imports valid rows and stores filename, counts, and line errors', async () => {
