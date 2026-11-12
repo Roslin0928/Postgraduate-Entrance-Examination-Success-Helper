@@ -28,6 +28,7 @@ export default function TasksPage() {
     await load();
   };
   const act = async (task: TaskSummary, action: string) => {
+    if (action === 'review') { Taro.navigateTo({ url: `/pages/english/vocabulary?taskId=${task.id}` }); return; }
     if (action === 'start') { Taro.navigateTo({ url: `/pages/tasks/pomodoro?taskId=${task.id}` }); return; }
     await Taro.request({ url: `${API}/v1/tasks/${task.id}`, method: 'PATCH', header: { Authorization: `Bearer ${token}` }, data: { action } });
     await load();

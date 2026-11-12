@@ -10,6 +10,7 @@ export default function TaskCard({ task, onAction }: { task: TaskSummary; onActi
       <View className="muted" style={{ marginTop: '12rpx' }}>优先级 {task.priority} · {task.status}</View>
       {task.status !== 'completed' && task.status !== 'skipped' && task.status !== 'rescheduled' && (
         <View style={{ display: 'flex', gap: '12rpx', marginTop: '20rpx' }}>
+          {task.type === 'vocabulary' && <Button size="mini" onClick={() => onAction('review')}>复习词汇</Button>}
           <Button size="mini" onClick={() => onAction('start')}>开始</Button>
           <Button size="mini" onClick={() => onAction('pause')}>暂停</Button>
           <Button size="mini" onClick={() => onAction('complete')}>完成</Button>

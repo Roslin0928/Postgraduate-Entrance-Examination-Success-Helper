@@ -33,4 +33,5 @@ export type ExamProfilePatch = Partial<{
 }>;
 
 export * from './task';
+export * from './vocabulary';
 export * from './pomodoro';

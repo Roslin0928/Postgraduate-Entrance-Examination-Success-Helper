@@ -13,13 +13,16 @@ import { PrismaService } from './prisma.service';
 import { TasksController } from './modules/tasks/tasks.controller';
 import { TasksService } from './modules/tasks/tasks.service';
 import { PomodoroService } from './modules/tasks/pomodoro.service';
+import { VocabularyController } from './modules/vocabulary/vocabulary.controller';
+import { VocabularyService } from './modules/vocabulary/vocabulary.service';
 
 @Module({
-  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController],
+  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController, VocabularyController],
   providers: [
     PrismaService,
     TasksService,
     PomodoroService,
+    VocabularyService,
     AuthService,
     {
       provide: WECHAT_IDENTITY_PROVIDER,
