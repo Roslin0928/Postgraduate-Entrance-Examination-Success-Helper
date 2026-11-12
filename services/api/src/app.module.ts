@@ -10,11 +10,16 @@ import { ExamProfileController } from './exam-profile.controller';
 import { HealthController } from './health.controller';
 import { MeController } from './me.controller';
 import { PrismaService } from './prisma.service';
+import { TasksController } from './modules/tasks/tasks.controller';
+import { TasksService } from './modules/tasks/tasks.service';
+import { PomodoroService } from './modules/tasks/pomodoro.service';
 
 @Module({
-  controllers: [HealthController, AuthController, MeController, ExamProfileController],
+  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController],
   providers: [
     PrismaService,
+    TasksService,
+    PomodoroService,
     AuthService,
     {
       provide: WECHAT_IDENTITY_PROVIDER,

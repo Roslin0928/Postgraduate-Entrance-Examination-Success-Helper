@@ -31,3 +31,6 @@ export type ExamProfilePatch = Partial<{
   dailyGoalMinutes: number;
   defaultPomodoroMinutes: number;
 }>;
+
+export * from './task';
+export * from './pomodoro';

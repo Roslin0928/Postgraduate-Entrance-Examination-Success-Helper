@@ -8,38 +8,86 @@ datasource db {
 }
 
 model Account {
-  id                String        @id @default(cuid())
-  wechatOpenId      String        @unique
-  nickname          String?
-  avatarUrl         String?
-  phoneBound        Boolean       @default(false)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  examProfile       ExamProfile?
-  authSessions      AuthSession[]
+  id           String        @id @default(cuid())
+  wechatOpenId String        @unique
+  nickname     String?
+  avatarUrl    String?
+  phoneBound   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  examProfile  ExamProfile?
+  authSessions AuthSession[]
+  tasks        Task[]
+}
+
+model Task {
+  id               String            @id @default(cuid())
+  accountId        String
+  title            String
+  type             String
+  plannedMinutes   Int
+  plannedDate      DateTime
+  priority         Int               @default(0)
+  status           String            @default("planned")
+  completedMinutes Int               @default(0)
+  sourceTaskId     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  account          Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  sessions         PomodoroSession[]
+
+  @@index([accountId, plannedDate, priority])
+  @@index([accountId, sourceTaskId])
+}
+
+model PomodoroSession {
+  id                 String          @id @default(cuid())
+  taskId             String
+  status             String          @default("running")
+  startedAt          DateTime        @default(now())
+  endedAt            DateTime?
+  runningSince       DateTime?
+  accumulatedSeconds Int             @default(0)
+  pauseSegments      String          @default("[]")
+  task               Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  events             PomodoroEvent[]
+
+  @@index([taskId, status])
+}
+
+model PomodoroEvent {
+  id        String          @id @default(cuid())
+  sessionId String
+  eventId   String
+  action    String
+  createdAt DateTime        @default(now())
+  session   PomodoroSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, eventId])
+  @@index([sessionId, createdAt])
 }
 
 model ExamProfile {
-  id                      String   @id @default(cuid())
-  accountId               String   @unique
-  targetExamDate          DateTime?
-  major                   String?
-  targetSchoolId          String?
-  availableWindows        String   @default("[]")
-  dailyGoalMinutes        Int      @default(180)
-  defaultPomodoroMinutes  Int      @default(25)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  account                 Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id                     String    @id @default(cuid())
+  accountId              String    @unique
+  targetExamDate         DateTime?
+  major                  String?
+  targetSchoolId         String?
+  availableWindows       String    @default("[]")
+  dailyGoalMinutes       Int       @default(180)
+  defaultPomodoroMinutes Int       @default(25)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  account                Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
 model AuthSession {
-  id         String   @id @default(cuid())
-  accountId  String
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  accountId String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, expiresAt])
 }

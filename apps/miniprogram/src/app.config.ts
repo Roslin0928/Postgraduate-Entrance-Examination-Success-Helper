@@ -1,5 +1,5 @@
 export default defineAppConfig({
-  pages: ['pages/me/index', 'pages/me/login'],
+  pages: ['pages/tasks/index', 'pages/tasks/pomodoro', 'pages/me/index', 'pages/me/login'],
   window: {
     navigationBarTitleText: '考研计划',
     navigationBarBackgroundColor: '#f7f8fa',

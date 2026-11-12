@@ -20,6 +20,9 @@ importers:
 
   apps/miniprogram:
     dependencies:
+      '@kaoyan/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@tarojs/components':
         specifier: ^4.1.5
         version: 4.3.2(@tarojs/helper@4.3.2(supports-color@8.1.1))(@types/react@18.3.31)(postcss@8.5.32)

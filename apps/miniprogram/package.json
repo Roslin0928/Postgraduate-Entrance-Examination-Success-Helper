@@ -6,6 +6,7 @@
     "lint": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@kaoyan/domain": "workspace:*",
     "@tarojs/components": "^4.1.5",
     "@tarojs/taro": "^4.1.5",
     "react": "^18.3.1"
