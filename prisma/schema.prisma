@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String        @id @default(cuid())
+  wechatOpenId      String        @unique
+  nickname          String?
+  avatarUrl         String?
+  phoneBound        Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  examProfile       ExamProfile?
+  authSessions      AuthSession[]
+}
+
+model ExamProfile {
+  id                      String   @id @default(cuid())
+  accountId               String   @unique
+  targetExamDate          DateTime?
+  major                   String?
+  targetSchoolId          String?
+  availableWindows        String   @default("[]")
+  dailyGoalMinutes        Int      @default(180)
+  defaultPomodoroMinutes  Int      @default(25)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  account                 Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model AuthSession {
+  id         String   @id @default(cuid())
+  accountId  String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, expiresAt])
+}

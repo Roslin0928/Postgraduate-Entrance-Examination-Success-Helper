@@ -1,0 +1,16 @@
+{
+  "name": "kaoyan-platform-mvp",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev:api": "pnpm --filter api start:dev",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.0.1",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}
