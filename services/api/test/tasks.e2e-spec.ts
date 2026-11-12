@@ -28,8 +28,11 @@ describe('tasks API', () => {
         update: jest.fn(({ where, data }: any) => { const session = { ...sessions.get(where.id), ...data }; sessions.set(where.id, session); return session; }),
       },
       pomodoroEvent: {
-        findUnique: jest.fn(({ where }: any) => events.get(`${where.sessionId_eventId.sessionId}:${where.sessionId_eventId.eventId}`) ?? null),
-        create: jest.fn(({ data }: any) => { const event = { id: `event-${++id}`, ...data }; events.set(`${data.sessionId}:${data.eventId}`, event); return event; }),
+        findUnique: jest.fn(({ where, include }: any) => {
+          const event = events.get(`${where.taskId_eventId.taskId}:${where.taskId_eventId.eventId}`) ?? null;
+          return event && include?.session ? { ...event, session: sessions.get(event.sessionId) } : event;
+        }),
+        create: jest.fn(({ data }: any) => { const event = { id: `event-${++id}`, ...data }; events.set(`${data.taskId}:${data.eventId}`, event); return event; }),
       },
       $transaction: jest.fn((input: any) => typeof input === 'function' ? input(prisma) : Promise.all(input)),
       $connect: jest.fn(), $disconnect: jest.fn(),
@@ -75,6 +78,39 @@ describe('tasks API', () => {
     const restored = await request(app.getHttpServer()).post(url).set('Authorization', 'Bearer user-a').send({ eventId: 'restore-1', action: 'sync' }).expect(201);
     expect(restored.body.status).toBe('paused');
     expect(events.size).toBe(2);
+  });
+
+  it('does not create a session or event when syncing a task with no session', async () => {
+    const created = await request(app.getHttpServer()).post('/v1/tasks').set('Authorization', 'Bearer user-a').send({
+      title: 'Review', type: 'custom', plannedMinutes: 20, plannedDate: '2026-11-12', priority: 1,
+    }).expect(201);
+    const response = await request(app.getHttpServer()).post(`/v1/tasks/${created.body.id}/pomodoro-events`)
+      .set('Authorization', 'Bearer user-a').send({ eventId: 'sync-empty', action: 'sync' }).expect(201);
+    expect(response.body).toMatchObject({ sessionId: null, status: 'planned', effectiveSeconds: 0 });
+    expect(sessions.size).toBe(0);
+    expect(events.size).toBe(0);
+  });
+
+  it('returns the original session for start and complete replays after the session is terminal', async () => {
+    const created = await request(app.getHttpServer()).post('/v1/tasks').set('Authorization', 'Bearer user-a').send({
+      title: 'Review', type: 'custom', plannedMinutes: 20, plannedDate: '2026-11-12', priority: 1,
+    }).expect(201);
+    const url = `/v1/tasks/${created.body.id}/pomodoro-events`;
+    const start = await request(app.getHttpServer()).post(url).set('Authorization', 'Bearer user-a')
+      .send({ eventId: 'stable-start', action: 'start' }).expect(201);
+    const complete = await request(app.getHttpServer()).post(url).set('Authorization', 'Bearer user-a')
+      .send({ eventId: 'stable-complete', action: 'complete' }).expect(201);
+    const eventCount = events.size;
+    const sessionCount = sessions.size;
+    const startReplay = await request(app.getHttpServer()).post(url).set('Authorization', 'Bearer user-a')
+      .send({ eventId: 'stable-start', action: 'start' }).expect(201);
+    const completeReplay = await request(app.getHttpServer()).post(url).set('Authorization', 'Bearer user-a')
+      .send({ eventId: 'stable-complete', action: 'complete' }).expect(201);
+    expect(startReplay.body).toEqual(complete.body);
+    expect(completeReplay.body).toEqual(complete.body);
+    expect(start.body.sessionId).toBe(complete.body.sessionId);
+    expect(events.size).toBe(eventCount);
+    expect(sessions.size).toBe(sessionCount);
   });
 
   it('creates a next day copy with its source task id when rescheduled', async () => {

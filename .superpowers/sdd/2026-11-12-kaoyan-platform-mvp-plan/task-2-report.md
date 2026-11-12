@@ -21,3 +21,10 @@
 
 - 未在真实微信小程序运行时手动关闭并重新打开页面；恢复路径由服务端集成测试覆盖，UI 仍需在目标设备验证导航与计时显示。
 - 沿用仓库文档中的 `prisma db push` 本地开发流程；未生成生产数据库迁移。
+
+## 复核修复（2026-11-12）
+
+- `sync` 现在只读：有活动 session 时返回其状态；没有 session 时返回 `planned` 空状态，不写入 session 或伪造 start 事件。
+- `PomodoroEvent` 增加 taskId，并增加 `(taskId, eventId)` 唯一键。服务端先按任务范围查历史事件，因此 session 终态后重放 start/complete 也返回同一关联 session，不会创建新 session 或再次累计。
+- 小程序恢复请求失败时显示错误状态并可重试；无活动 session 时显示“尚未开始”，由用户显式开始。
+- 追加 API 集成用例覆盖空 sync 和终态事件重放。复核后 `pnpm --filter api test -- tasks.e2e-spec.ts` 通过 5/5；`pnpm test` 通过（domain 7 项、API 8 项）；`pnpm lint` 通过。

@@ -15,28 +15,33 @@ export class PomodoroService {
     }
     const task = await this.prisma.task.findFirst({ where: { id: taskId, accountId } });
     if (!task) throw new NotFoundException('Task not found');
-    if (task.status === 'completed' || task.status === 'skipped' || task.status === 'rescheduled') {
-      throw new BadRequestException('Task is no longer active');
-    }
     const now = new Date();
     return this.prisma.$transaction(async (tx: any) => {
+      const prior = await tx.pomodoroEvent.findUnique({
+        where: { taskId_eventId: { taskId, eventId } },
+        include: { session: true },
+      });
+      if (prior) return this.view(prior.session, now);
+
       let session = await tx.pomodoroSession.findFirst({
         where: { taskId, status: { in: ['running', 'paused'] } },
         orderBy: { startedAt: 'desc' },
       });
-      if (!session && action !== 'start' && action !== 'sync') throw new BadRequestException('No active pomodoro session');
+      if (action === 'sync') return session ? this.view(session, now) : this.emptyView();
+      if (task.status === 'completed' || task.status === 'skipped' || task.status === 'rescheduled') {
+        throw new BadRequestException('Task is no longer active');
+      }
+      if (!session && action !== 'start') throw new BadRequestException('No active pomodoro session');
       if (!session) {
+        if (action !== 'start') throw new BadRequestException('No active pomodoro session');
         session = await tx.pomodoroSession.create({
           data: { taskId, status: 'running', startedAt: now, runningSince: now },
         });
-        await tx.pomodoroEvent.create({ data: { sessionId: session.id, eventId, action: 'start', createdAt: now } });
+        await tx.pomodoroEvent.create({ data: { taskId, sessionId: session.id, eventId, action: 'start', createdAt: now } });
         await tx.task.update({ where: { id: taskId }, data: { status: 'in_progress' } });
         return this.view(session, now);
       }
 
-      if (action === 'sync') return this.view(session, now);
-      const prior = await tx.pomodoroEvent.findUnique({ where: { sessionId_eventId: { sessionId: session.id, eventId } } });
-      if (prior) return this.view(session, now);
       let state;
       try {
         state = applyPomodoroEvent({
@@ -47,7 +52,7 @@ export class PomodoroService {
       } catch (error) {
         throw new BadRequestException((error as Error).message);
       }
-      await tx.pomodoroEvent.create({ data: { sessionId: session.id, eventId, action, createdAt: now } });
+      await tx.pomodoroEvent.create({ data: { taskId, sessionId: session.id, eventId, action, createdAt: now } });
       session = await tx.pomodoroSession.update({
         where: { id: session.id },
         data: {
@@ -83,5 +88,9 @@ export class PomodoroService {
       effectiveMinutes: Math.floor(seconds / 60),
       runningSince: session.runningSince?.toISOString() ?? null,
     };
+  }
+
+  private emptyView() {
+    return { sessionId: null, status: 'planned', effectiveSeconds: 0, effectiveMinutes: 0, runningSince: null };
   }
 }

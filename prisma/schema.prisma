@@ -57,6 +57,7 @@ model PomodoroSession {
 
 model PomodoroEvent {
   id        String          @id @default(cuid())
+  taskId    String
   sessionId String
   eventId   String
   action    String
@@ -64,6 +65,7 @@ model PomodoroEvent {
   session   PomodoroSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, eventId])
+  @@unique([taskId, eventId])
   @@index([sessionId, createdAt])
 }
 
