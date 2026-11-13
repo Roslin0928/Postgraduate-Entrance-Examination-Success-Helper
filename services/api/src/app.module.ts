@@ -15,14 +15,29 @@ import { TasksService } from './modules/tasks/tasks.service';
 import { PomodoroService } from './modules/tasks/pomodoro.service';
 import { VocabularyController } from './modules/vocabulary/vocabulary.controller';
 import { VocabularyService } from './modules/vocabulary/vocabulary.service';
+import { SentencesController } from './modules/sentences/sentences.controller';
+import { SentencesService } from './modules/sentences/sentences.service';
+import { FakeAnalysisProvider } from './modules/sentences/fake-analysis-provider';
+import { HttpAnalysisProvider, SENTENCE_ANALYSIS_PROVIDER } from './modules/sentences/analysis-provider';
 
 @Module({
-  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController, VocabularyController],
+  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController, VocabularyController, SentencesController],
   providers: [
     PrismaService,
     TasksService,
     PomodoroService,
     VocabularyService,
+    SentencesService,
+    {
+      provide: SENTENCE_ANALYSIS_PROVIDER,
+      useFactory: () => {
+        const configuredProvider = process.env.SENTENCE_ANALYSIS_PROVIDER;
+        const provider = configuredProvider ?? (process.env.NODE_ENV === 'production' ? '' : 'fake');
+        if (provider === 'http') return new HttpAnalysisProvider();
+        if (provider === 'fake' && process.env.NODE_ENV !== 'production') return new FakeAnalysisProvider();
+        throw new Error('Set SENTENCE_ANALYSIS_PROVIDER=http for production or fake for local development');
+      },
+    },
     AuthService,
     {
       provide: WECHAT_IDENTITY_PROVIDER,

@@ -22,6 +22,28 @@ model Account {
   userWords    UserWord[]
   wordReviews  WordReview[]
   vocabularyImports VocabularyImport[]
+  sentenceAnalyses SentenceAnalysis[]
+}
+
+model SentenceAnalysis {
+  id                    String   @id @default(cuid())
+  accountId             String
+  original              String
+  mode                  String   @default("detailed")
+  status                String   @default("pending")
+  understandingStatus   String   @default("needs_review")
+  chunks                String   @default("[]")
+  mainClause            String   @default("")
+  grammarPoints         String   @default("[]")
+  literalTranslation    String   @default("")
+  naturalTranslation    String   @default("")
+  errorMessage          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  account               Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+  @@index([accountId, status])
 }
 
 model Task {
