@@ -76,14 +76,18 @@ export class FakeWechatIdentityProvider implements WechatIdentityProvider {
 }
 
 export class WechatCodeIdentityProvider implements WechatIdentityProvider {
-  async exchangeCode(code: string): Promise<string> {
-    const appId = process.env.WECHAT_APP_ID;
-    const appSecret = process.env.WECHAT_APP_SECRET;
+  constructor(
+    private readonly appId: string = process.env.WECHAT_APP_ID ?? '',
+    private readonly appSecret: string = process.env.WECHAT_APP_SECRET ?? '',
+  ) {
     if (!appId || !appSecret) throw new Error('WECHAT_APP_ID and WECHAT_APP_SECRET are required');
+  }
+
+  async exchangeCode(code: string): Promise<string> {
     const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
     url.search = new URLSearchParams({
-      appid: appId,
-      secret: appSecret,
+      appid: this.appId,
+      secret: this.appSecret,
       js_code: code,
       grant_type: 'authorization_code',
     }).toString();

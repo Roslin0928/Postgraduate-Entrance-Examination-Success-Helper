@@ -5,7 +5,8 @@
   "scripts": {
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "pretest": "pnpm --filter @kaoyan/domain build && prisma generate --schema ../../prisma/schema.prisma",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand && jest --config jest.e2e.config.js --runInBand",
+    "build": "tsc -p tsconfig.json",
     "prelint": "pnpm --filter @kaoyan/domain build && prisma generate --schema ../../prisma/schema.prisma",
     "lint": "tsc --noEmit -p tsconfig.json"
   },

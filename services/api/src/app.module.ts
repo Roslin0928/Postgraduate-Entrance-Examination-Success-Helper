@@ -18,13 +18,14 @@ import { VocabularyService } from './modules/vocabulary/vocabulary.service';
 import { SentencesController } from './modules/sentences/sentences.controller';
 import { SentencesService } from './modules/sentences/sentences.service';
 import { FakeAnalysisProvider } from './modules/sentences/fake-analysis-provider';
-import { HttpAnalysisProvider, SENTENCE_ANALYSIS_PROVIDER } from './modules/sentences/analysis-provider';
+import { HttpAnalysisProvider, SENTENCE_ANALYSIS_PROVIDER, UnavailableAnalysisProvider } from './modules/sentences/analysis-provider';
 import { AnalyticsController } from './modules/analytics/analytics.controller';
 import { AnalyticsService } from './modules/analytics/analytics.service';
 import { SchoolsController } from './modules/schools/schools.controller';
 import { SchoolsService } from './modules/schools/schools.service';
 import { FakeSearchProvider } from './modules/schools/fake-search-provider';
 import { SCHOOL_SEARCH_PROVIDER } from './modules/schools/search-provider';
+import { UnavailableSearchProvider } from './modules/schools/unavailable-search-provider';
 
 @Module({
   controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController, VocabularyController, SentencesController, AnalyticsController, SchoolsController],
@@ -36,15 +37,25 @@ import { SCHOOL_SEARCH_PROVIDER } from './modules/schools/search-provider';
     SentencesService,
     AnalyticsService,
     SchoolsService,
-    { provide: SCHOOL_SEARCH_PROVIDER, useFactory: () => new FakeSearchProvider() },
+    {
+      provide: SCHOOL_SEARCH_PROVIDER,
+      useFactory: () => {
+        const configuredProvider = process.env.SCHOOL_SEARCH_PROVIDER;
+        const provider = configuredProvider ?? (process.env.NODE_ENV === 'production' ? 'unavailable' : 'fake');
+        if (provider === 'fake' && process.env.NODE_ENV !== 'production') return new FakeSearchProvider();
+        if (provider === 'unavailable') return new UnavailableSearchProvider();
+        throw new Error('Set SCHOOL_SEARCH_PROVIDER to a configured provider or unavailable');
+      },
+    },
     {
       provide: SENTENCE_ANALYSIS_PROVIDER,
       useFactory: () => {
         const configuredProvider = process.env.SENTENCE_ANALYSIS_PROVIDER;
-        const provider = configuredProvider ?? (process.env.NODE_ENV === 'production' ? '' : 'fake');
+        const provider = configuredProvider ?? (process.env.NODE_ENV === 'production' ? 'unavailable' : 'fake');
         if (provider === 'http') return new HttpAnalysisProvider();
         if (provider === 'fake' && process.env.NODE_ENV !== 'production') return new FakeAnalysisProvider();
-        throw new Error('Set SENTENCE_ANALYSIS_PROVIDER=http for production or fake for local development');
+        if (provider === 'unavailable') return new UnavailableAnalysisProvider();
+        throw new Error('Set SENTENCE_ANALYSIS_PROVIDER=http or unavailable for production, or fake for local development');
       },
     },
     AuthService,

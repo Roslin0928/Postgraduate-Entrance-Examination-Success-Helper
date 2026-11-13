@@ -6,6 +6,12 @@ export interface SentenceAnalysisProvider {
 
 export const SENTENCE_ANALYSIS_PROVIDER = Symbol('SENTENCE_ANALYSIS_PROVIDER');
 
+export class UnavailableAnalysisProvider implements SentenceAnalysisProvider {
+  async analyze(_input: string, _mode: SentenceMode): Promise<SentenceAnalysisResult> {
+    throw new Error('句子分析服务暂不可用，请稍后重试。');
+  }
+}
+
 export class HttpAnalysisProvider implements SentenceAnalysisProvider {
   constructor(private readonly endpoint = process.env.SENTENCE_ANALYSIS_URL, private readonly apiKey = process.env.SENTENCE_ANALYSIS_API_KEY) {
     if (!endpoint) throw new Error('SENTENCE_ANALYSIS_URL is required for the production sentence analysis provider');
