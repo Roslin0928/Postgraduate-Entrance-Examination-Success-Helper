@@ -36,3 +36,4 @@ export * from './task';
 export * from './vocabulary';
 export * from './pomodoro';
 export * from './sentence';
+export * from './school';

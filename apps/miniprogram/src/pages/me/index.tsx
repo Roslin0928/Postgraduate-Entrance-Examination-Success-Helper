@@ -67,6 +67,11 @@ export default function MePage() {
         </Button>
       </View>
       <View className="card">
+        <Text>学习复盘与择校</Text>
+        <Button size="mini" onClick={() => Taro.navigateTo({ url: '/pages/analytics/index' })} style={{ marginTop: '16rpx' }}>学习统计</Button>
+        <Button size="mini" onClick={() => Taro.navigateTo({ url: '/pages/schools/index' })} style={{ marginTop: '16rpx' }}>择校资料</Button>
+      </View>
+      <View className="card">
         <View>考研时间：{profile?.targetExamDate ?? '未设置'}</View>
         <View style={{ marginTop: '20rpx' }}>目标院校：{profile?.targetSchoolId ?? '暂未选择'}</View>
         <View style={{ marginTop: '20rpx' }}>每日目标：{profile?.dailyGoalMinutes ?? 180} 分钟</View>

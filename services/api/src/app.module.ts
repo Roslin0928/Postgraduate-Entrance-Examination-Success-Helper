@@ -19,15 +19,24 @@ import { SentencesController } from './modules/sentences/sentences.controller';
 import { SentencesService } from './modules/sentences/sentences.service';
 import { FakeAnalysisProvider } from './modules/sentences/fake-analysis-provider';
 import { HttpAnalysisProvider, SENTENCE_ANALYSIS_PROVIDER } from './modules/sentences/analysis-provider';
+import { AnalyticsController } from './modules/analytics/analytics.controller';
+import { AnalyticsService } from './modules/analytics/analytics.service';
+import { SchoolsController } from './modules/schools/schools.controller';
+import { SchoolsService } from './modules/schools/schools.service';
+import { FakeSearchProvider } from './modules/schools/fake-search-provider';
+import { SCHOOL_SEARCH_PROVIDER } from './modules/schools/search-provider';
 
 @Module({
-  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController, VocabularyController, SentencesController],
+  controllers: [HealthController, AuthController, MeController, ExamProfileController, TasksController, VocabularyController, SentencesController, AnalyticsController, SchoolsController],
   providers: [
     PrismaService,
     TasksService,
     PomodoroService,
     VocabularyService,
     SentencesService,
+    AnalyticsService,
+    SchoolsService,
+    { provide: SCHOOL_SEARCH_PROVIDER, useFactory: () => new FakeSearchProvider() },
     {
       provide: SENTENCE_ANALYSIS_PROVIDER,
       useFactory: () => {

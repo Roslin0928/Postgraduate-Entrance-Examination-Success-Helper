@@ -23,6 +23,23 @@ model Account {
   wordReviews  WordReview[]
   vocabularyImports VocabularyImport[]
   sentenceAnalyses SentenceAnalysis[]
+  schoolQueries SchoolQuery[]
+}
+
+model SchoolQuery {
+  id          String   @id @default(cuid())
+  accountId   String
+  instruction String
+  query       String   @default("{}")
+  results     String   @default("[]")
+  status      String   @default("pending")
+  reason      String?
+  searchedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
 }
 
 model SentenceAnalysis {
