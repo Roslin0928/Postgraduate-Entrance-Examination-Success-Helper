@@ -12,8 +12,9 @@ export class AnalyticsService {
     this.validateDate(date);
     const zone = this.validateTimeZone(timeZone);
     const { start, end } = localDayBounds(date, zone);
+    const { start: plannedDateStart, end: plannedDateEnd } = utcDateBucket(date);
     const [tasks, sessions, reviews, analyses] = await Promise.all([
-      this.prisma.task.findMany({ where: { accountId, plannedDate: { gte: start, lt: end } } }),
+      this.prisma.task.findMany({ where: { accountId, plannedDate: { gte: plannedDateStart, lt: plannedDateEnd } } }),
       this.prisma.pomodoroSession.findMany({ where: { task: { accountId }, status: { in: ['completed', 'paused'] }, startedAt: { gte: start, lt: end } } }),
       this.prisma.wordReview.findMany({ where: { accountId, reviewedAt: { gte: start, lt: end } } }),
       this.prisma.sentenceAnalysis.findMany({ where: { accountId, status: 'completed', createdAt: { gte: start, lt: end } } }),
@@ -53,6 +54,12 @@ export class AnalyticsService {
     if (typeof value !== 'string' || (value !== 'UTC' && !TIME_ZONES.has(value))) throw new BadRequestException('timeZone must be a valid IANA timezone');
     return value;
   }
+}
+
+function utcDateBucket(date: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const start = Date.UTC(year, month - 1, day);
+  return { start: new Date(start), end: new Date(start + DAY_MS) };
 }
 
 function localDayBounds(date: string, timeZone: string) {

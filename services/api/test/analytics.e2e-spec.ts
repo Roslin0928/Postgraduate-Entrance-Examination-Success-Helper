@@ -42,9 +42,17 @@ describe('analytics API', () => {
     const response = await request(app.getHttpServer()).get('/v1/analytics/daily?date=2026-11-13')
       .set('Authorization', 'Bearer user-a').set('x-time-zone', 'Asia/Shanghai').expect(200);
     expect(response.body).toMatchObject({ date: '2026-11-13', plannedTasks: 2, completedTasks: 1, effectiveMinutes: 30, vocabularyReviews: 1, sentenceAnalyses: 1 });
-    expect(prisma.task.findMany).toHaveBeenCalledWith({ where: { accountId: 'user-a', plannedDate: { gte: new Date('2026-11-12T16:00:00.000Z'), lt: new Date('2026-11-13T16:00:00.000Z') } } });
+    expect(prisma.task.findMany).toHaveBeenCalledWith({ where: { accountId: 'user-a', plannedDate: { gte: new Date('2026-11-13T00:00:00.000Z'), lt: new Date('2026-11-14T00:00:00.000Z') } } });
     expect(prisma.wordReview.findMany).toHaveBeenCalledWith({ where: { accountId: 'user-a', reviewedAt: { gte: new Date('2026-11-12T16:00:00.000Z'), lt: new Date('2026-11-13T16:00:00.000Z') } } });
     expect(prisma.task.findMany).not.toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ accountId: 'user-b' }) }));
+  });
+
+  it('counts UTC-midnight planned dates in negative-offset local days', async () => {
+    const response = await request(app.getHttpServer()).get('/v1/analytics/daily?date=2026-11-13')
+      .set('Authorization', 'Bearer user-a').set('x-time-zone', 'America/Los_Angeles').expect(200);
+    expect(response.body).toMatchObject({ plannedTasks: 2, completedTasks: 1 });
+    expect(prisma.task.findMany).toHaveBeenCalledWith({ where: { accountId: 'user-a', plannedDate: { gte: new Date('2026-11-13T00:00:00.000Z'), lt: new Date('2026-11-14T00:00:00.000Z') } } });
+    expect(prisma.wordReview.findMany).toHaveBeenCalledWith({ where: { accountId: 'user-a', reviewedAt: { gte: new Date('2026-11-13T08:00:00.000Z'), lt: new Date('2026-11-14T08:00:00.000Z') } } });
   });
 
   it('returns zero-filled buckets for empty days and a Monday-to-Sunday week', async () => {

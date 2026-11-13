@@ -58,6 +58,8 @@ export default function TasksPage() {
       <Button style={{ marginTop: '16rpx' }} onClick={() => Taro.navigateTo({ url: vocabularyTask
         ? `/pages/english/vocabulary?taskId=${vocabularyTask.id}`
         : '/pages/english/vocabulary' })}>单词复习</Button>
+      <View className="muted" style={{ marginTop: '20rpx' }}>拆解句子结构、语法和重点词汇。</View>
+      <Button style={{ marginTop: '16rpx' }} onClick={() => Taro.navigateTo({ url: '/pages/english/sentence' })}>长难句分析</Button>
     </View>
     <TaskEditor onCreate={create} />
     {loading ? <Text>加载中…</Text> : tasks.map((task) => <TaskCard key={task.id} task={task} onAction={(action) => void act(task, action)} />)}
