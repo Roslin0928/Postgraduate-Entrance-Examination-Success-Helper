@@ -38,7 +38,7 @@ export class SentencesService {
   private async runAnalysis(record: any) {
     try {
       const result = await this.provider.analyze(record.original, record.mode);
-      this.validateResult(result, record.original);
+      this.validateResult(result, record.original, record.mode);
       const completed = await this.prisma.sentenceAnalysis.update({
         where: { id: record.id },
         data: { ...this.serializeResult(result), status: 'completed', errorMessage: null },
@@ -59,15 +59,23 @@ export class SentencesService {
     if (!['detailed', 'brief'].includes(mode)) throw new BadRequestException('mode must be detailed or brief');
   }
 
-  private validateResult(result: SentenceAnalysisResult, original: string): void {
+  private validateResult(result: SentenceAnalysisResult, original: string, mode: SentenceMode): void {
     if (!result || !Array.isArray(result.chunks) || typeof result.mainClause !== 'string' || !Array.isArray(result.grammarPoints) ||
-      typeof result.literalTranslation !== 'string' || typeof result.naturalTranslation !== 'string') {
+      !result.grammarPoints.every((point) => typeof point === 'string') || typeof result.literalTranslation !== 'string' ||
+      typeof result.naturalTranslation !== 'string') {
       throw new Error('Analysis provider returned an invalid result');
     }
     for (const chunk of result.chunks) {
-      if (typeof chunk.text !== 'string' || !['subject', 'verb', 'object', 'clause', 'modifier', 'other'].includes(chunk.role)) {
+      if (!chunk || typeof chunk.text !== 'string' || !['subject', 'verb', 'object', 'clause', 'modifier', 'other'].includes(chunk.role)) {
         throw new Error('Analysis provider returned invalid sentence chunks');
       }
+    }
+    if (!result.mainClause.trim() || !result.naturalTranslation.trim()) {
+      throw new Error('Analysis provider returned an incomplete sentence analysis');
+    }
+    if (mode === 'detailed' && (result.chunks.length === 0 || !result.grammarPoints.some((point) => point.trim()) ||
+      !result.literalTranslation.trim())) {
+      throw new Error('Analysis provider returned an incomplete detailed sentence analysis');
     }
     result.original = original;
   }

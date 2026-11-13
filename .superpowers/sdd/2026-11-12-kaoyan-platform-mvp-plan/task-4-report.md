@@ -21,3 +21,10 @@
 - 生产环境需提供满足 `SentenceAnalysisResult` 结构的 HTTP 服务，并设置 `SENTENCE_ANALYSIS_PROVIDER=http`、`SENTENCE_ANALYSIS_URL`；`SENTENCE_ANALYSIS_API_KEY` 可选。
 - `FakeAnalysisProvider` 仅用于开发和测试，提供确定性的示例分析，不适合作为真实语言分析服务。
 - Prisma schema 已更新；部署到已有数据库前需按部署流程生成并应用数据库迁移。
+
+## 复核修复
+
+- provider 返回值按模式校验：所有模式都要求非空主干和自然译文，grammarPoints 必须是字符串数组；详细模式还要求至少一个有效 chunk、至少一个非空语法点和非空直译。
+- 缺失或空字段、grammarPoints 含非字符串等结构错误会进入 retryable，仍保留原句草稿。
+- 新增 detailed 和 brief 结构错误回归覆盖。
+- 修复后验证：专项 API/provider 测试 8 项通过，`pnpm test` 全量 36 项通过，`pnpm lint` 通过。

@@ -57,6 +57,32 @@ describe('sentence analysis API', () => {
     expect(provider.analyze).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps provider results with missing or malformed required fields retryable', async () => {
+    const invalidResults = [
+      { chunks: [], mainClause: 'A clause', grammarPoints: ['grammar'], literalTranslation: '直译', naturalTranslation: '意译' },
+      { chunks: [{ text: 'A', role: 'subject' }], mainClause: ' ', grammarPoints: ['grammar'], literalTranslation: '直译', naturalTranslation: '意译' },
+      { chunks: [{ text: 'A', role: 'subject' }], mainClause: 'A clause', grammarPoints: ['  '], literalTranslation: '直译', naturalTranslation: '意译' },
+      { chunks: [{ text: 'A', role: 'subject' }], mainClause: 'A clause', grammarPoints: [42], literalTranslation: '直译', naturalTranslation: '意译' },
+      { chunks: [{ text: 'A', role: 'subject' }], mainClause: 'A clause', grammarPoints: ['grammar'], literalTranslation: '', naturalTranslation: '意译' },
+      { chunks: [{ text: 'A', role: 'subject' }], mainClause: 'A clause', grammarPoints: ['grammar'], literalTranslation: '直译', naturalTranslation: ' ' },
+    ];
+
+    for (const result of invalidResults) {
+      provider.analyze.mockResolvedValueOnce(result);
+      const response = await request(app.getHttpServer()).post('/v1/sentence-analyses')
+        .set('Authorization', 'Bearer user-a').send({ sentence: 'Preserve my sentence.' }).expect(201);
+      expect(response.body).toMatchObject({ original: 'Preserve my sentence.', status: 'retryable' });
+      expect(records.get(response.body.id).original).toBe('Preserve my sentence.');
+    }
+  });
+
+  it('requires a main clause and natural translation for brief results', async () => {
+    provider.analyze.mockResolvedValueOnce({ chunks: [], mainClause: 'Clause', grammarPoints: [], literalTranslation: '', naturalTranslation: ' ' });
+    const response = await request(app.getHttpServer()).post('/v1/sentence-analyses')
+      .set('Authorization', 'Bearer user-a').send({ sentence: 'A brief sentence.', mode: 'brief' }).expect(201);
+    expect(response.body).toMatchObject({ original: 'A brief sentence.', status: 'retryable' });
+  });
+
   it('lets only the owner update understanding status', async () => {
     const record = await request(app.getHttpServer()).post('/v1/sentence-analyses').set('Authorization', 'Bearer user-a').send({ sentence: 'Ownership matters.' }).expect(201);
     await request(app.getHttpServer()).patch(`/v1/sentence-analyses/${record.body.id}/status`).set('Authorization', 'Bearer user-b').send({ status: 'understood' }).expect(404);
