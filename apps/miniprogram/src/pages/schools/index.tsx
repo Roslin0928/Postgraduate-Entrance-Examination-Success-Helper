@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Input, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import type { NormalizedSchoolQuery, SchoolQueryView } from '@kaoyan/domain';
+import { SchoolSourceInfo } from './source-info';
 
 const API = process.env.TARO_APP_API_BASE_URL ?? 'http://localhost:3000';
 
@@ -42,8 +43,7 @@ export default function SchoolsPage() {
       {result.results.map((school, index) => <View key={`${school.schoolName}-${index}`} style={{ marginTop: '20rpx', paddingTop: '16rpx', borderTop: '1rpx solid #eee' }}>
         <Text>{school.schoolName} · {school.majorName ?? '专业待确认'}</Text>
         {Object.entries(school.fields).map(([key, value]) => <View className="muted" key={key} style={{ marginTop: '8rpx' }}>{key}：{String(value ?? '—')}</View>)}
-        <View className="muted" style={{ marginTop: '8rpx' }}>来源：{school.sourceName}</View>
-        <View className="muted" style={{ marginTop: '8rpx' }}>资料更新：{school.updatedAt.slice(0, 10)}</View>
+        <SchoolSourceInfo sourceName={school.sourceName} sourceUrl={school.sourceUrl} updatedAt={school.updatedAt} />
       </View>)}
       <Button size="mini" onClick={() => Taro.navigateTo({ url: `/pages/schools/result?id=${result.id}` })} style={{ marginTop: '16rpx' }}>打开结果页</Button>
       <Button size="mini" onClick={() => void search()} disabled={loading} style={{ marginTop: '16rpx' }}>重试 / 修改条件</Button>

@@ -37,8 +37,8 @@ describe('school query API', () => {
     const response = await request(app.getHttpServer()).post('/v1/school-queries').set('Authorization', 'Bearer user-a')
       .send({ instruction: '2027年想在北京读计算机，优先双一流' }).expect(201);
     expect(provider.search).toHaveBeenCalledWith({ year: 2027, major: '计算机', region: '北京', schoolType: '双一流', constraints: ['双一流'] });
-    expect(response.body).toMatchObject({ query: { year: 2027, major: '计算机', region: '北京', constraints: ['双一流'] }, results: [{ schoolName: '示例大学', sourceName: '示例大学招生网', updatedAt: '2026-11-01T00:00:00.000Z' }] });
-    expect((await request(app.getHttpServer()).get(`/v1/school-queries/${response.body.id}`).set('Authorization', 'Bearer user-a').expect(200)).body.results).toHaveLength(1);
+    expect(response.body).toMatchObject({ query: { year: 2027, major: '计算机', region: '北京', constraints: ['双一流'] }, results: [{ schoolName: '示例大学', sourceUrl: 'https://example.edu/admission', sourceName: '示例大学招生网', updatedAt: '2026-11-01T00:00:00.000Z' }] });
+    expect((await request(app.getHttpServer()).get(`/v1/school-queries/${response.body.id}`).set('Authorization', 'Bearer user-a').expect(200)).body.results[0].sourceUrl).toBe('https://example.edu/admission');
     await request(app.getHttpServer()).get(`/v1/school-queries/${response.body.id}`).set('Authorization', 'Bearer user-b').expect(404);
   });
 

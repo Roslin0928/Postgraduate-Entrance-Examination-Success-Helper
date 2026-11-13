@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Text, View } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
 import type { SchoolQueryView } from '@kaoyan/domain';
+import { SchoolSourceInfo } from './source-info';
 
 const API = process.env.TARO_APP_API_BASE_URL ?? 'http://localhost:3000';
 
@@ -21,8 +22,8 @@ export default function SchoolResultPage() {
     {result.reason && <View className="card muted">{result.reason}</View>}
     {result.results.map((school, index) => <View className="card" key={`${school.schoolName}-${index}`}>
       <Text>{school.schoolName} · {school.majorName ?? '专业待确认'}</Text>
-      <View className="muted" style={{ marginTop: '12rpx' }}>来源：{school.sourceName}</View>
-      <View className="muted" style={{ marginTop: '8rpx' }}>更新时间：{school.updatedAt.slice(0, 10)}</View>
+      {Object.entries(school.fields).map(([key, value]) => <View className="muted" key={key} style={{ marginTop: '8rpx' }}>{key}：{String(value ?? '—')}</View>)}
+      <SchoolSourceInfo sourceName={school.sourceName} sourceUrl={school.sourceUrl} updatedAt={school.updatedAt} />
     </View>)}
   </View>;
 }

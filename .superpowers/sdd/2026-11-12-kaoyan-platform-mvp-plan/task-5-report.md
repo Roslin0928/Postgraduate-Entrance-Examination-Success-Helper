@@ -17,3 +17,9 @@
 
 - School results use manually configured demonstration data; no live admissions search or third-party data source is connected. Results are labeled as examples, and users are directed to verify official announcements.
 - Analytics relies on stored task/session/review/analysis records and does not calculate a historical vocabulary proficiency model; familiarity change is the net of known and unknown review feedback.
+
+## Follow-up fix: source verification in mini-program
+
+- School cards on both the search and result pages now show the full `sourceUrl` as selectable text, with a “复制来源链接” button and a prompt to paste it into a browser to verify official material. Copy failures show a fallback instruction.
+- The school-query API test now asserts that the provider's exact `sourceUrl` is returned both by query creation and the authenticated read endpoint.
+- Follow-up verification: targeted school API tests passed (2 tests); `pnpm test` passed (12 suites / 40 tests); `pnpm lint` passed for all workspace packages.
