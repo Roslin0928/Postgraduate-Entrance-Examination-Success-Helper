@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id           String        @id @default(cuid())
+  wechatOpenId String        @unique
+  nickname     String?
+  avatarUrl    String?
+  phoneBound   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  examProfile  ExamProfile?
+  authSessions AuthSession[]
+  tasks        Task[]
+  words        Word[]
+  userWords    UserWord[]
+  wordReviews  WordReview[]
+  vocabularyImports VocabularyImport[]
+  sentenceAnalyses SentenceAnalysis[]
+  schoolQueries SchoolQuery[]
+}
+
+model SchoolQuery {
+  id          String   @id @default(cuid())
+  accountId   String
+  instruction String
+  query       String   @default("{}")
+  results     String   @default("[]")
+  status      String   @default("pending")
+  reason      String?
+  searchedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+}
+
+model SentenceAnalysis {
+  id                    String   @id @default(cuid())
+  accountId             String
+  original              String
+  mode                  String   @default("detailed")
+  status                String   @default("pending")
+  understandingStatus   String   @default("needs_review")
+  chunks                String   @default("[]")
+  mainClause            String   @default("")
+  grammarPoints         String   @default("[]")
+  literalTranslation    String   @default("")
+  naturalTranslation    String   @default("")
+  errorMessage          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  account               Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+  @@index([accountId, status])
+}
+
+model Task {
+  id               String            @id @default(cuid())
+  accountId        String
+  title            String
+  type             String
+  plannedMinutes   Int
+  plannedDate      DateTime
+  priority         Int               @default(0)
+  status           String            @default("planned")
+  completedMinutes Int               @default(0)
+  sourceTaskId     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  account          Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  sessions         PomodoroSession[]
+  wordReviews      WordReview[]
+
+  @@index([accountId, plannedDate, priority])
+  @@index([accountId, type, plannedDate])
+  @@index([accountId, sourceTaskId])
+}
+
+model Word {
+  id               String     @id @default(cuid())
+  word             String
+  normalizedWord   String
+  meaning          String
+  source           String
+  ownerAccountId   String?
+  createdAt        DateTime   @default(now())
+  owner            Account?   @relation(fields: [ownerAccountId], references: [id], onDelete: Cascade)
+  userWords        UserWord[]
+
+  @@unique([ownerAccountId, normalizedWord])
+  @@index([source, normalizedWord])
+}
+
+model UserWord {
+  id                    String        @id @default(cuid())
+  accountId             String
+  wordId                String
+  nextReviewAt          DateTime      @default(now())
+  consecutiveKnown      Int           @default(0)
+  lastReviewedAt        DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  account               Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  word                  Word          @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  reviews               WordReview[]
+
+  @@unique([accountId, wordId])
+  @@index([accountId, nextReviewAt])
+}
+
+model WordReview {
+  id          String    @id @default(cuid())
+  accountId   String
+  userWordId  String
+  taskId      String?
+  feedback    String
+  reviewedAt  DateTime  @default(now())
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  userWord    UserWord  @relation(fields: [userWordId], references: [id], onDelete: Cascade)
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([accountId, reviewedAt])
+}
+
+model VocabularyImport {
+  id          String   @id @default(cuid())
+  accountId   String
+  fileName    String
+  totalRows   Int
+  successCount Int
+  errorRows   String   @default("[]")
+  createdAt   DateTime @default(now())
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+}
+
+model PomodoroSession {
+  id                 String          @id @default(cuid())
+  taskId             String
+  status             String          @default("running")
+  startedAt          DateTime        @default(now())
+  endedAt            DateTime?
+  runningSince       DateTime?
+  accumulatedSeconds Int             @default(0)
+  pauseSegments      String          @default("[]")
+  task               Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  events             PomodoroEvent[]
+
+  @@index([taskId, status])
+}
+
+model PomodoroEvent {
+  id        String          @id @default(cuid())
+  taskId    String
+  sessionId String
+  eventId   String
+  action    String
+  createdAt DateTime        @default(now())
+  session   PomodoroSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, eventId])
+  @@unique([taskId, eventId])
+  @@index([sessionId, createdAt])
+}
+
+model ExamProfile {
+  id                     String    @id @default(cuid())
+  accountId              String    @unique
+  targetExamDate         DateTime?
+  major                  String?
+  targetSchoolId         String?
+  availableWindows       String    @default("[]")
+  dailyGoalMinutes       Int       @default(180)
+  defaultPomodoroMinutes Int       @default(25)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  account                Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  accountId String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, expiresAt])
+}
