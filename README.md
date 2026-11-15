@@ -18,6 +18,28 @@ pnpm dev:api
 
 API 不记录登录 code、access token、微信身份标识或用户提交的句子。新增日志时应继续避免记录这些字段或完整请求体。
 
+## 微信小程序预览
+
+先在一个终端启动 API：
+
+```powershell
+pnpm.cmd dev:api
+```
+
+再在另一个终端启动微信端监听构建：
+
+```powershell
+pnpm.cmd --filter miniprogram dev:weapp
+```
+
+在微信开发者工具中导入仓库的 `apps/miniprogram` 目录；项目配置会将小程序根目录指向自动生成的 `dist/`。本地 API 默认使用 `http://localhost:3000`，需要其他地址时先设置 `TARO_APP_API_BASE_URL`。
+
+生产构建使用：
+
+```powershell
+pnpm.cmd --filter miniprogram build:weapp
+```
+
 ## 验证
 
 ```sh

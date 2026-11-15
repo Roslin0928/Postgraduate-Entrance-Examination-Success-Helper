@@ -1,5 +1,5 @@
 {
-  "miniprogramRoot": "./",
+  "miniprogramRoot": "./dist/",
   "projectname": "kaoyan-platform-mvp",
   "description": "考研学习规划小程序",
   "appid": "touristappid",
